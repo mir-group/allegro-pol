@@ -1,3 +1,3 @@
-from ._allegro_pol import Allegro, ForceStressPolarizationOutput
+from .allegro_pol_model import AllegroPolarizationModel
 
-__all__ = [Allegro, ForceStressPolarizationOutput]
+__all__ = ["AllegroPolarizationModel"]
