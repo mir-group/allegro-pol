@@ -1,7 +1,8 @@
 # NequIP exclusions
 experiments/
 wandb/
-benchmark_data/
+lightning_logs
+outputs
 .idea/
 results/
 
