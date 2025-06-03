@@ -4,29 +4,24 @@ from e3nn.util.jit import compile_mode
 
 from nequip.data import AtomicDataDict
 from nequip.nn import GraphModuleMixin
-from nequip.nn._rescale import RescaleOutput
 
 from .. import _keys
 
 
 @compile_mode("script")
 class ForceStressPolarizationOutput(GraphModuleMixin, torch.nn.Module):
-    r"""Adapted from `nequip` @ git commit 26e26459267c7eea3aeea1fda1cd46a62f09720c
-
-    Also includes abs() on value fix
-    """
+    """`ForceStressOutput` from NequIP, extended to predict polarization related quantities through autogad."""
 
     do_born_charge: bool
 
     def __init__(
         self,
         func: GraphModuleMixin,
-        do_born_charge: bool,
+        do_born_charge: bool = True,
     ):
         super().__init__()
 
         self.do_born_charge = do_born_charge
-        self.scale_factor = 1.0  # for folding polarization during training
         self.func = func
 
         # check and init irreps
@@ -39,23 +34,20 @@ class ForceStressPolarizationOutput(GraphModuleMixin, torch.nn.Module):
         self.irreps_out[AtomicDataDict.FORCE_KEY] = "1o"
         self.irreps_out[AtomicDataDict.STRESS_KEY] = "1o"
         self.irreps_out[AtomicDataDict.VIRIAL_KEY] = "1o"
-        self.irreps_out[_keys.POLARIZATION_KEY] = "1o"
+        self.irreps_out[AtomicDataDict.POLARIZATION_KEY] = "1o"
         if self.do_born_charge:
-            self.irreps_out[_keys.BORN_CHARGE_KEY] = "1o"
+            self.irreps_out[AtomicDataDict.BORN_CHARGE_KEY] = "1o"
             self.irreps_out[_keys.POLARIZABILITY_KEY] = "1o"
 
         # for torchscript compat
         self.register_buffer("_empty", torch.Tensor())
-
-    def update_for_rescale(self, rescale_module: RescaleOutput):
-        self.scale_factor = rescale_module.scale_by
 
     def forward(self, data: AtomicDataDict.Type) -> AtomicDataDict.Type:
         assert AtomicDataDict.EDGE_VECTORS_KEY not in data
 
         if AtomicDataDict.BATCH_KEY in data:
             batch = data[AtomicDataDict.BATCH_KEY]
-            num_batch: int = len(data[AtomicDataDict.BATCH_PTR_KEY]) - 1
+            num_batch: int = AtomicDataDict.num_frames(data)
         else:
             # Special case for efficiency
             batch = self._empty
@@ -83,14 +75,18 @@ class ForceStressPolarizationOutput(GraphModuleMixin, torch.nn.Module):
         # Paper they worked from:
         # Knuth et. al. Comput. Phys. Commun 190, 33-50, 2015
         # https://pure.mpg.de/rest/items/item_2085135_9/component/file_2156800/content
-        displacement = torch.zeros(
-            (3, 3),
-            dtype=pos.dtype,
-            device=pos.device,
-        )
         if num_batch > 1:
-            # add n_batch dimension
-            displacement = displacement.view(-1, 3, 3).expand(num_batch, 3, 3)
+            displacement = torch.zeros(
+                (num_batch, 3, 3),
+                dtype=pos.dtype,
+                device=pos.device,
+            )
+        else:
+            displacement = torch.zeros(
+                (3, 3),
+                dtype=pos.dtype,
+                device=pos.device,
+            )
         displacement.requires_grad_(True)
         data["_displacement"] = displacement
         # in the above paper, the infinitesimal distortion is *symmetric*
@@ -275,14 +271,8 @@ class ForceStressPolarizationOutput(GraphModuleMixin, torch.nn.Module):
             # don't give later modules one that does
             pos.requires_grad_(False)
 
-        # fold polarization during training to match labels
-        if has_cell:  # always fold if cell available
-            scaled_cell = cell / self.scale_factor
-        else:
-            scaled_cell = self._empty
-        data["_scaled_cell"] = scaled_cell
-
-        data[_keys.POLARIZATION_KEY] = polarization
-        data[_keys.BORN_CHARGE_KEY] = born_charges
+        data[AtomicDataDict.POLARIZATION_KEY] = polarization
+        data[AtomicDataDict.BORN_CHARGE_KEY] = born_charges
         data[_keys.POLARIZABILITY_KEY] = polarizability
+
         return data

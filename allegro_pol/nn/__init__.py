@@ -1,4 +1,7 @@
-from ._autograd import ForceStressPolarizationOutput
-from ._sph import SphericalHarmonicEdgeAttrs
+from .pol_grad import ForceStressPolarizationOutput
+from .efield_tensor_embed import TwoBodySphericalHarmonicElectricFieldTensorEmbed
 
-__all__ = [ForceStressPolarizationOutput, SphericalHarmonicEdgeAttrs]
+__all__ = [
+    "ForceStressPolarizationOutput",
+    "TwoBodySphericalHarmonicElectricFieldTensorEmbed",
+]
