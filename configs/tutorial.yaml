@@ -1,0 +1,183 @@
+# Tutorial config for allegro-pol using new NequIP infrastructure
+# Based on allegro-private/configs/tutorial.yaml but adapted for polarization prediction
+
+run: [train, test]
+
+# Hyperparameters for variable interpolation
+cutoff_radius: 5.0
+chemical_symbols: [Ba, Ti, O]
+model_type_names: ${chemical_symbols}
+
+# Metric for monitoring training progress
+monitored_metric: val0_epoch/weighted_sum
+
+# Allegro model hyperparameters
+num_scalar_features: 64
+
+data:
+  _target_: nequip.data.datamodule.ASEDataModule
+  seed: 123
+
+  # dataset with polarization data
+  split_dataset:
+    file_path: ../data/BaTiO3.xyz
+    train: 0.8
+    val: 0.1
+    test: 0.1
+
+  # include custom polarization fields
+  include_keys:
+    - polarization
+    - polarizability
+  
+  # this is because of how the example xyz records these keys
+  key_mapping:
+    total_energy: total_energy
+    born_charge: born_effective_charges
+
+  transforms:
+    - _target_: nequip.data.transforms.ChemicalSpeciesToAtomTypeMapper
+      chemical_symbols: ${chemical_symbols}
+    - _target_: nequip.data.transforms.NeighborListTransform
+      r_max: ${cutoff_radius}
+
+  train_dataloader:
+    _target_: torch.utils.data.DataLoader
+    batch_size: 1
+    num_workers: 1
+    shuffle: true
+
+  val_dataloader:
+    _target_: torch.utils.data.DataLoader
+    batch_size: 5
+    num_workers: 1
+
+  test_dataloader: ${data.val_dataloader}
+
+  stats_manager:
+    _target_: nequip.data.CommonDataStatisticsManager
+    dataloader_kwargs:
+      batch_size: 5
+    type_names: ${model_type_names}
+
+trainer:
+  _target_: lightning.Trainer
+  accelerator: gpu
+  max_epochs: 100
+  check_val_every_n_epoch: 1
+  log_every_n_steps: 5
+  callbacks:
+    - _target_: lightning.pytorch.callbacks.EarlyStopping
+      monitor: ${monitored_metric}
+      min_delta: 1e-4
+      patience: 20
+    - _target_: lightning.pytorch.callbacks.ModelCheckpoint
+      monitor: ${monitored_metric}
+      dirpath: ${hydra:runtime.output_dir}
+      filename: best
+      save_last: true
+
+training_module:
+  _target_: nequip.train.EMALightningModule
+  ema_decay: 0.999
+
+  # Loss function with all polarization quantities
+  loss:
+    _target_: allegro_pol.train.EnergyForecPolarizationLoss
+    coeffs:
+      total_energy: 1.0
+      forces: 1.0
+      polarization: 1.0
+      stress: 1.0
+      born_effective_charges: 1.0
+      polarizability: 1.0
+    per_atom_energy: true
+    do_stress: true
+    do_born_charge: true
+    do_polarizability: true
+
+  # Validation metrics with all polarization quantities
+  val_metrics:
+    _target_: allegro_pol.train.EnergyForecPolarizationMetrics
+    coeffs:
+      per_atom_energy_mae: 1.0
+      forces_mae: 1.0
+      per_atom_polarization_mae: 1.0
+      stress_mae: 1.0
+      born_charge_mae: 1.0
+      polarizability_mae: 1.0
+    do_stress: true
+    do_born_charge: true
+    do_polarizability: true
+
+  train_metrics: ${training_module.val_metrics}
+  test_metrics: ${training_module.val_metrics}
+
+  optimizer:
+    _target_: torch.optim.Adam
+    lr: 0.001
+
+  lr_scheduler:
+    scheduler:
+      _target_: torch.optim.lr_scheduler.ReduceLROnPlateau
+      factor: 0.6
+      patience: 5
+      threshold: 0.2
+      min_lr: 1e-6
+    monitor: ${monitored_metric}
+    interval: epoch
+    frequency: 1
+
+  # Allegro-pol model
+  model:
+    _target_: allegro_pol.model.AllegroPolarizationModel
+
+    # Basic model params
+    seed: 456
+    model_dtype: float32
+    type_names: ${model_type_names}
+    r_max: ${cutoff_radius}
+
+    # Two-body scalar embedding
+    radial_chemical_embed:
+      _target_: allegro.nn.TwoBodyBesselScalarEmbed
+      num_bessels: 8
+      bessel_trainable: false
+      polynomial_cutoff_p: 6
+
+    radial_chemical_embed_dim: ${num_scalar_features}
+
+    # Scalar embedding MLP
+    scalar_embed_mlp_hidden_layers_depth: 1
+    scalar_embed_mlp_hidden_layers_width: ${num_scalar_features}
+    scalar_embed_mlp_nonlinearity: silu
+
+    # Core hyperparameters
+    l_max: 1
+    num_layers: 2
+    num_scalar_features: ${num_scalar_features}
+    num_tensor_features: 32
+
+    # Allegro MLPs
+    allegro_mlp_hidden_layers_depth: 1
+    allegro_mlp_hidden_layers_width: ${num_scalar_features}
+    allegro_mlp_nonlinearity: silu
+
+    # Advanced hyperparameters
+    parity: true
+    tp_path_channel_coupling: true
+
+    # Readout MLP
+    readout_mlp_hidden_layers_depth: 1
+    readout_mlp_hidden_layers_width: ${num_scalar_features}
+    readout_mlp_nonlinearity: silu
+
+    # Dataset statistics
+    avg_num_neighbors: ${training_data_stats:num_neighbors_mean}
+    per_type_energy_shifts: ${training_data_stats:per_atom_energy_mean}
+    per_type_energy_scales: ${training_data_stats:forces_rms}
+    per_type_energy_scales_trainable: false
+    per_type_energy_shifts_trainable: false
+
+global_options:
+  allow_tf32: false
