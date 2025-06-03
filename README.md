@@ -1,11 +1,11 @@
 # allegro-pol
 
 `allegro-pol` is an extension package of the `nequip` framework that adapts the Allegro architecture (another `nequip` extension package) for the prediction of the electric response of materials (polarization, Born charges, polarizability) in addition to energy and forces within a single ML model.
-The ideas are described in [in this paper](https://arxiv.org/abs/2403.17207).
+The ideas are described in ["Unified differentiable learning of electric response"](https://www.nature.com/articles/s41467-025-59304-1).
 
 ## Installation
 
-This installation requires `nequip==0.6.2` and `nequip-allegro==0.3.0`, which will automatically be installed with `allegro-pol`.
+This installation requires `nequip>=0.10.1` and `nequip-allegro>=0.6.0`, which will automatically be installed with `allegro-pol`.
 
 It is strongly recommended to create a fresh virtual environment. For example,
 ```
