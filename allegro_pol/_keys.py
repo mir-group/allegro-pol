@@ -1,27 +1,18 @@
-from nequip.data import register_fields, AtomicDataDict
-from nequip.train._key import ABBREV
+from nequip.data import register_fields, ABBREV
 
 from typing import Final
 
-# define keys for polarization and its associated properties
-POLARIZATION_KEY: Final[str] = "polarization"
-BORN_CHARGE_KEY: Final[str] = "born_charge"
+# Define keys that are not in base nequip
 EXTERNAL_ELECTRIC_FIELD_KEY: Final[str] = "external_electric_field"
 POLARIZABILITY_KEY: Final[str] = "polarizability"
 
-# register fields
+# Register only the new fields not already in nequip
 register_fields(
-    graph_fields=[POLARIZATION_KEY, EXTERNAL_ELECTRIC_FIELD_KEY, POLARIZABILITY_KEY],
-    node_fields=[BORN_CHARGE_KEY],
+    graph_fields=[EXTERNAL_ELECTRIC_FIELD_KEY, POLARIZABILITY_KEY],
     cartesian_tensor_fields={
-        BORN_CHARGE_KEY: "ij",
         POLARIZABILITY_KEY: "ij=ji",
-    },  # Born charge is not, in general, symmetric
+    },
 )
 
-# related by a linear function (differentiation) to the energy:
-AtomicDataDict.ALL_ENERGY_KEYS.extend(
-    [POLARIZATION_KEY, BORN_CHARGE_KEY, POLARIZABILITY_KEY]
-)
-
-ABBREV.update({POLARIZATION_KEY: "P", BORN_CHARGE_KEY: "Zb", POLARIZABILITY_KEY: "α"})
+# Update ABBREV for the new keys only
+ABBREV.update({EXTERNAL_ELECTRIC_FIELD_KEY: "E_ext", POLARIZABILITY_KEY: "α"})
