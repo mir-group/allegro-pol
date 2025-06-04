@@ -4,7 +4,7 @@
 
 """
 This script parses the LAMMPS outfile of a MLMD at fixed volume (orthorombic cell only)
-fixed temperature, carried out with the pair-allegro interface that includes the 
+fixed temperature, carried out with the pair-allegro interface that includes the
 treatment of polarization and polarizability, and plots:
 • infrared spectrum
 • Raman spectrum
@@ -44,7 +44,7 @@ eps0const = 5.5263499562 * 10**-3  # in [e * Volt^{-1} * Ansgrom^{-1}]
 THz2cminv = 0.03335640951981521 * 10**3
 sig_g = 20  # gaussian broadening (in cm-1ƒ)
 cm_inv2Ry = 0.000124 * 13.605698320654
-c_dfpt = '#d40000'
+c_dfpt = "#d40000"
 c_mlmd = "#0055d4"
 
 # Extra settings
@@ -58,23 +58,21 @@ MATERIAL_CONFIG = {
         "files_dfpt": [
             "SiO2/DFPT/SiO2-IR-dfpt.dat",
             "SiO2/DFPT/SiO2-epsre-dfpt.dat",
-            "SiO2/DFPT/SiO2-epsim-dfpt.dat"
+            "SiO2/DFPT/SiO2-epsim-dfpt.dat",
         ],  # calculated with QE
         "ωi": 0,
         "ωf": 1400,
         "temp": 300,
         "do_IR": True,
-        "do_Raman": False
+        "do_Raman": False,
     },
     # Add new materials here following the same structure
 }
 
 # Set matplotlib parameters
-plt.rcParams.update({
-    "font.size": 24,
-    "legend.fontsize": 16,
-    "legend.handlelength": 0.5
-})
+plt.rcParams.update(
+    {"font.size": 24, "legend.fontsize": 16, "legend.handlelength": 0.5}
+)
 
 
 def axis_settings(ax):
@@ -113,7 +111,7 @@ def ylim_range(data):
 
 def set_lims(x, xi, xf, y):
     """Set plot limits based on x and y data."""
-    return ylim_range(y[np.abs(x - xi).argmin():np.abs(x - xf).argmin()])
+    return ylim_range(y[np.abs(x - xi).argmin() : np.abs(x - xf).argmin()])
 
 
 def rescale_amplitude(y1, y2, x1, x2, xi, xf):
@@ -127,19 +125,19 @@ def rescale_amplitude(y1, y2, x1, x2, xi, xf):
 
 def gaussian(x, A, mu, sig):
     """Calculate Gaussian function."""
-    return A / np.sqrt(2.0 * np.pi * sig**2) * np.exp(-0.5 * ((x - mu) / sig)**2)
+    return A / np.sqrt(2.0 * np.pi * sig**2) * np.exp(-0.5 * ((x - mu) / sig) ** 2)
 
 
 def gaussian_kernel(x, sig_g):
     """Calculate Gaussian kernel."""
-    kernel = np.exp(-0.5 * (x / sig_g)**2)
+    kernel = np.exp(-0.5 * (x / sig_g) ** 2)
     return kernel / np.sum(kernel)
 
 
 def gaussian_broaden(ω, data, sig_g, mode=0):
     """
     Apply Gaussian broadening to data.
-    
+
     Args:
         mode == 0: use np.convolve (symmetrize freq and signal)
         mode == 1: replace each point with its gaussian (not symmetric at zero freq, but same as in DFPT)
@@ -148,7 +146,9 @@ def gaussian_broaden(ω, data, sig_g, mode=0):
         ω_2 = np.concatenate((-ω[::-1][:-1], ω))
         data_2 = np.concatenate((data[::-1][:-1], data))
         kernel = gaussian_kernel(ω_2, sig_g)
-        data_broadened = np.convolve(data_2, kernel, mode='same')[len(data)-1:len(ω_2)]
+        data_broadened = np.convolve(data_2, kernel, mode="same")[
+            len(data) - 1 : len(ω_2)
+        ]
     if mode == 1:
         data_broadened = np.zeros(len(ω))
         for i, x in enumerate(data):
@@ -244,19 +244,18 @@ class Spectroscopy:
             if self.do_IR:
                 self.plot_ε(pdf)
 
-
     def unit_pol(self, P):
         """
         Convert polarization to fractional coordinates, apply modulo operation, and convert back.
-        
+
         This method handles the periodic boundary conditions for polarization by:
         1. Converting polarization to fractional coordinates
         2. Applying modulo operation to wrap values within the unit cell
         3. Converting back to Cartesian coordinates
-        
+
         Args:
             P (numpy.ndarray): Polarization vector in Cartesian coordinates
-            
+
         Returns:
             numpy.ndarray: Polarization vector with periodic boundary conditions applied
         """
@@ -267,15 +266,15 @@ class Spectroscopy:
         Pnew = np.where(Pnew < -0.5 * pol_mod_frac, Pnew + pol_mod_frac, Pnew)
         Pnew = np.dot(np.linalg.inv(self.g), Pnew.T).T
         return Pnew
-    
+
     def get_metric(self):
         """
         Calculate the metric tensor for coordinate transformations.
-        
+
         This method constructs the metric tensor g that is used to transform
         between Cartesian and fractional coordinates. The metric tensor is
         constructed from the lattice vectors p, normalized by their lengths.
-        
+
         The resulting metric tensor is stored in self.g and is used by unit_pol
         for coordinate transformations.
         """
@@ -301,22 +300,24 @@ class Spectroscopy:
         # only for orthogonal cells
         cmd = "grep 'orthogonal box = (0 0 0)' " + file_mlmd + " | tail -1"
         data = subprocess.check_output(cmd, shell=True, text=True).split()
-        A = float(data[7].split('(')[1])
+        A = float(data[7].split("(")[1])
         B = float(data[8])
-        C = float(data[9].split(')')[0])
+        C = float(data[9].split(")")[0])
         self.V = A * B * C
 
         # Parse total length production dynamics
         cmd = "grep 'run ' " + file_mlmd + " | tail -1"
-        self.n_t = int(subprocess.check_output(cmd, shell=True, text=True).split()[1]) + 1
+        self.n_t = (
+            int(subprocess.check_output(cmd, shell=True, text=True).split()[1]) + 1
+        )
 
         # Take the production dynamics
         with open(file_mlmd) as f:
             data = f.readlines()
         for i, line in enumerate(data):
-            if 'c_polarization[1]' in line:
+            if "c_polarization[1]" in line:
                 i_start = i + 1
-        data = data[i_start:i_start + self.n_t]
+        data = data[i_start : i_start + self.n_t]
 
         # Parse the production dynamics
         self.time = np.zeros(self.n_t)
@@ -343,11 +344,13 @@ class Spectroscopy:
         self.P = self.unit_pol(self.P)
 
         # Useful quantities
-        self.n_ω = int(self.n_t/2) + 1  # rfft gives half vector size
+        self.n_ω = int(self.n_t / 2) + 1  # rfft gives half vector size
         self.var_P = np.var(self.P, axis=0, dtype=np.float64)
-        self.var_α = np.array([np.var(self.α[:, i, i], dtype=np.float64) for i in range(3)])
+        self.var_α = np.array(
+            [np.var(self.α[:, i, i], dtype=np.float64) for i in range(3)]
+        )
         self.P_avg = np.mean(self.P, axis=0)
-        self.α_avg = np.array([np.mean(self.α[:,i,i]) for i in range(3)])
+        self.α_avg = np.array([np.mean(self.α[:, i, i]) for i in range(3)])
 
     def get_autocorr_P(self):
         """Get autocorrelation function of polarization in time and frequency space from MLMD."""
@@ -408,11 +411,11 @@ class Spectroscopy:
         for i in tqdm.trange(1, m + 1):
             # construct a signal stopping at t_i
             v_aux = np.zeros(n)
-            v_aux[:int(i * n/m)] = v_centered[:int(i * n/m)]
+            v_aux[: int(i * n / m)] = v_centered[: int(i * n / m)]
             # calculate its autocorrelation function in time space
-            AF_t_2 = np.correlate(v_aux, v_aux, mode='full') / (int(i * n/m))
+            AF_t_2 = np.correlate(v_aux, v_aux, mode="full") / (int(i * n / m))
             # take the second half of values
-            AF_t_m = AF_t_2[n-1:]
+            AF_t_m = AF_t_2[n - 1 :]
             # calculate its fourier transform
             AF_ω_m = np.fft.rfft(AF_t_m) * dt
             # add them to the total
@@ -459,8 +462,12 @@ class Spectroscopy:
         self.εinf = np.zeros(3)
         self.ε0 = np.zeros(3)
         for i in range(3):
-            self.εinf[i] = 1 + 1.0/(eps0const * self.V) * np.sum(self.α[:, i, i])/self.n_t
-            self.ε0[i] = self.εinf[i] + self.var_P[i]/(kB * self.temp * self.V * eps0const)
+            self.εinf[i] = (
+                1 + 1.0 / (eps0const * self.V) * np.sum(self.α[:, i, i]) / self.n_t
+            )
+            self.ε0[i] = self.εinf[i] + self.var_P[i] / (
+                kB * self.temp * self.V * eps0const
+            )
         print(f"High-freq dielectric constant: {round(np.sum(self.εinf)/3, 4):.4f}")
         print(f"Static dielectric constant: {round(np.sum(self.ε0)/3, 4):.4f}")
 
@@ -515,14 +522,18 @@ class Spectroscopy:
             plt.ylim(set_lims(self.ω, self.ωi, self.ωf, self.IR))
         else:
             IR_gauss = gaussian_broaden(self.ω, self.IR, sig_g)
-            plt.plot(self.ω, IR_gauss, lw=2.5, c=c_mlmd, label='MLMD')
+            plt.plot(self.ω, IR_gauss, lw=2.5, c=c_mlmd, label="MLMD")
             plt.ylim(set_lims(self.ω, self.ωi, self.ωf, IR_gauss))
 
         if self.do_dfpt:
             if do_smear is False:
-                IR_dfpt = rescale_amplitude(self.IR_dfpt, self.IR, self.ω, self.ω, self.ωi, self.ωf)
+                IR_dfpt = rescale_amplitude(
+                    self.IR_dfpt, self.IR, self.ω, self.ω, self.ωi, self.ωf
+                )
             else:
-                IR_dfpt = rescale_amplitude(self.IR_dfpt, IR_gauss, self.ω, self.ω, self.ωi, self.ωf)
+                IR_dfpt = rescale_amplitude(
+                    self.IR_dfpt, IR_gauss, self.ω, self.ω, self.ωi, self.ωf
+                )
             plt.plot(self.ω, IR_dfpt, lw=4, label="DFPT", ls=":", c=c_dfpt)
 
         plt.legend(frameon=False)
@@ -531,7 +542,7 @@ class Spectroscopy:
     def plot_raman(self, pdf, do_smear=True):
         """
         Plot Raman spectrum from MLMD data.
-        
+
         Args:
             pdf: PDF file to save the plot
             do_smear: Whether to apply Gaussian broadening to the spectrum
@@ -541,13 +552,13 @@ class Spectroscopy:
         plt.xlim(self.ωi, self.ωf)
         ax = plt.gca()
         ax.axes.yaxis.set_ticks([])
-        
+
         if do_smear is False:
             plt.plot(self.ω, self.Raman, lw=2.5, label="MLMD", c=c_mlmd)
             plt.ylim(set_lims(self.ω, self.ωi, self.ωf, self.Raman))
         else:
             Raman_gauss = gaussian_broaden(self.ω, self.Raman, sig_g)
-            plt.plot(self.ω, Raman_gauss, lw=2.5, c=c_mlmd, label='MLMD')
+            plt.plot(self.ω, Raman_gauss, lw=2.5, c=c_mlmd, label="MLMD")
             plt.ylim(set_lims(self.ω, self.ωi, self.ωf, Raman_gauss))
 
         plt.legend(frameon=False)
@@ -559,13 +570,15 @@ class Spectroscopy:
         plot_init(r"$\omega$ (cm$^{-1}$)", "Re$[ε]$", "")
         plt.xlim(self.ωi, self.ωf)
         if do_smear is False:
-            plt.plot(self.ω, self.ε_ω_av_re, lw=2.5, c=c_mlmd, label='MLMD')
+            plt.plot(self.ω, self.ε_ω_av_re, lw=2.5, c=c_mlmd, label="MLMD")
             plt.ylim(set_lims(self.ω, self.ωi, self.ωf, self.ε_ω_av_re))
         else:
             ε_ω_av_re_gauss = gaussian_broaden(self.ω, self.ε_ω_av_re, sig_g)
-            plt.plot(self.ω, ε_ω_av_re_gauss, lw=2.5, c=c_mlmd, label='MLMD')
+            plt.plot(self.ω, ε_ω_av_re_gauss, lw=2.5, c=c_mlmd, label="MLMD")
         if self.do_dfpt:
-            plt.plot(self.ω_ε_dfpt, self.ε_re_dfpt, lw=4, c=c_dfpt, ls=":", label='DFPT')
+            plt.plot(
+                self.ω_ε_dfpt, self.ε_re_dfpt, lw=4, c=c_dfpt, ls=":", label="DFPT"
+            )
         plt.legend(frameon=False)
         plt.ylim(-8, 14)
         pdf.savefig()
@@ -574,30 +587,32 @@ class Spectroscopy:
         plot_init(r"$\omega$ (cm$^{-1}$)", "$-$Im$[ε]$", "")
         plt.xlim(self.ωi, self.ωf)
         if do_smear is False:
-            plt.plot(self.ω, -self.ε_ω_av_im, lw=2.5, c=c_mlmd, label='MLMD')
+            plt.plot(self.ω, -self.ε_ω_av_im, lw=2.5, c=c_mlmd, label="MLMD")
             plt.ylim(set_lims(self.ω, self.ωi, self.ωf, self.ε_ω_av_im))
         else:
             ε_ω_av_im_gauss = gaussian_broaden(self.ω, self.ε_ω_av_im, sig_g)
-            plt.plot(self.ω, -ε_ω_av_im_gauss, lw=2.5, c=c_mlmd, label='MLMD')
+            plt.plot(self.ω, -ε_ω_av_im_gauss, lw=2.5, c=c_mlmd, label="MLMD")
         if self.do_dfpt:
-            plt.plot(self.ω_ε_dfpt, self.ε_im_dfpt, lw=4, c=c_dfpt, ls=":", label='DFPT')
+            plt.plot(
+                self.ω_ε_dfpt, self.ε_im_dfpt, lw=4, c=c_dfpt, ls=":", label="DFPT"
+            )
         plt.legend(frameon=False)
         pdf.savefig()
 
 
 if __name__ == "__main__":
-    
+
     assert len(sys.argv) > 1, "Specify Material"
 
     system = sys.argv[1]
-    
+
     if system not in MATERIAL_CONFIG:
         print(f"Material {system} not implemented")
         print(f"Available materials: {', '.join(MATERIAL_CONFIG.keys())}")
         sys.exit(1)
 
     config = MATERIAL_CONFIG[system]
-    
+
     for file_mlmd in config["files_mlmd"]:
         # check if file exists
         print(file_mlmd)
@@ -614,5 +629,5 @@ if __name__ == "__main__":
             ωi=config["ωi"],
             ωf=config["ωf"],
             do_IR=config["do_IR"],
-            do_Raman=config["do_Raman"]
+            do_Raman=config["do_Raman"],
         )

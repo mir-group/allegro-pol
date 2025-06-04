@@ -4,8 +4,8 @@
 
 """
 This script determines the dependency of coercive field with respect to temperature,
-given a statistics of hysteresis curves obtained with LAMMPS, carried out with the 
-pair-allegro interface that includes the treatment of polarization, Born charges, 
+given a statistics of hysteresis curves obtained with LAMMPS, carried out with the
+pair-allegro interface that includes the treatment of polarization, Born charges,
 and polarizability.
 
 The script plots:
@@ -24,11 +24,9 @@ import matplotlib.pyplot as plt
 from matplotlib.backends.backend_pdf import PdfPages
 from matplotlib.ticker import AutoMinorLocator
 
-plt.rcParams.update({
-    'font.size': 24,
-    'legend.fontsize': 20,
-    'legend.handlelength': 0.5
-})
+plt.rcParams.update(
+    {"font.size": 24, "legend.fontsize": 20, "legend.handlelength": 0.5}
+)
 
 colors = ["#0088aa", "#5d6c53", "#d40000"]
 
@@ -51,9 +49,10 @@ MATERIAL_CONFIG = {
         "prefix": "log.hyst_BaTiO3-E0_BaTiO3-sc333",  # Nomenclature for files
         "Ti": 280,  # Initial temperature
         "Tf": 350,  # Final temperature
-        "niter": 20  # Size of the statistics at fixed T
+        "niter": 20,  # Size of the statistics at fixed T
     }
 }
+
 
 def plot_init(label_x, label_y, title):
     plt.figure(figsize=(6, 6), dpi=60)
@@ -70,18 +69,10 @@ def axis_settings(ax):
         ax.spines[axis].set_linewidth(2.5)
     ax.xaxis.set_minor_locator(AutoMinorLocator(5))
     ax.yaxis.set_minor_locator(AutoMinorLocator(4))
-    ax.xaxis.set_tick_params(
-        which="major", width=3.0, length=12, direction="in"
-    )
-    ax.xaxis.set_tick_params(
-        which="minor", width=3.0, length=6, direction="in"
-    )
-    ax.yaxis.set_tick_params(
-        which="major", width=3.0, length=12, direction="in"
-    )
-    ax.yaxis.set_tick_params(
-        which="minor", width=3.0, length=6, direction="in"
-    )
+    ax.xaxis.set_tick_params(which="major", width=3.0, length=12, direction="in")
+    ax.xaxis.set_tick_params(which="minor", width=3.0, length=6, direction="in")
+    ax.yaxis.set_tick_params(which="major", width=3.0, length=12, direction="in")
+    ax.yaxis.set_tick_params(which="minor", width=3.0, length=6, direction="in")
     ax.yaxis.set_ticks_position("both")
 
 
@@ -145,7 +136,7 @@ def analyze(system, prefix, T, i):
     return [E[switchup], E[switchdown]]
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
 
     assert len(sys.argv) > 1, "Specify Material"
     system = sys.argv[1]
@@ -167,18 +158,12 @@ if __name__ == '__main__':
     with Pool() as pool:
         for T in Ts:
             for i in range(niter):
-                futures.append(
-                    pool.apply_async(analyze, (system, prefix, T, i))
-                )
+                futures.append(pool.apply_async(analyze, (system, prefix, T, i)))
 
         results = [fut.get() for fut in futures]
 
-    upfields = np.reshape(
-        [result[0] for result in results], (nTs, niter)
-    ) * Econv
-    downfields = np.reshape(
-        [result[1] for result in results], (nTs, niter)
-    ) * Econv
+    upfields = np.reshape([result[0] for result in results], (nTs, niter)) * Econv
+    downfields = np.reshape([result[1] for result in results], (nTs, niter)) * Econv
 
     mean_upfield = np.abs(np.mean(upfields, axis=1))
     mean_downfield = np.abs(np.mean(downfields, axis=1))
@@ -188,8 +173,8 @@ if __name__ == '__main__':
 
     with PdfPages(system + "/" + system + ".pdf") as pdf:
         plot_init("T (K)", "$E_c$ (MV$\cdot$cm$^{-1}$)", "")
-        plt.ticklabel_format(axis='y', style='sci', scilimits=(-3, 3))
-        
+        plt.ticklabel_format(axis="y", style="sci", scilimits=(-3, 3))
+
         # Plot up to down transition
         plt.plot(Ts, mean_upfield, label="up→dw", c=colors[0], lw=2.5)
         plt.fill_between(
@@ -197,9 +182,9 @@ if __name__ == '__main__':
             mean_upfield + std_upfield,
             mean_upfield - std_upfield,
             alpha=0.5,
-            color=colors[0]
+            color=colors[0],
         )
-        
+
         # Plot down to up transition
         plt.plot(Ts, mean_downfield, label="dw→up", c=colors[1], lw=2.5)
         plt.fill_between(
@@ -207,13 +192,13 @@ if __name__ == '__main__':
             mean_downfield + std_downfield,
             mean_downfield - std_downfield,
             alpha=0.5,
-            color=colors[1]
+            color=colors[1],
         )
-        
+
         # Plot mean
         mean_field = (mean_downfield + mean_upfield) / 2
         plt.plot(Ts, mean_field, label="mean", c=colors[2], lw=2.5)
         plt.scatter(Ts, mean_field, c=colors[2], s=100, zorder=100)
-        
+
         plt.legend(frameon=False)
         pdf.savefig()

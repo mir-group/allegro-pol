@@ -6,9 +6,9 @@
 
 """
 This script parses QE xml files obtained performing calculations under finite
-electric fields, and returns an extxyz file with the dataset containing 
-energy, atomic positions, forces, polarization, polarizability, stress, Born 
-charges in eV units. In addition, histograms of the input data are plotted 
+electric fields, and returns an extxyz file with the dataset containing
+energy, atomic positions, forces, polarization, polarizability, stress, Born
+charges in eV units. In addition, histograms of the input data are plotted
 into a pdf file to double check the results.
 
 How to run:
@@ -31,13 +31,13 @@ For BaTiO3:
 • axis   = "0" for zero field, "x" for Efield along x, ...
 example: BaTiO3/data/BaTiO3-E0-0
 
-Each {system}/data/{prefix}-E{axis}-{idf} folder must contain the QE xml 
+Each {system}/data/{prefix}-E{axis}-{idf} folder must contain the QE xml
 file, which we here denote {xmlname}.xml
 
-This convention on the nomenclature is needed as Born charges and 
-polarizability require combining QE xmlfiles obtained at different runs 
-pertaining to different electric field conditions. If one wishes changing 
-this convention, this can be done by customizing the keyword 'filename' in 
+This convention on the nomenclature is needed as Born charges and
+polarizability require combining QE xmlfiles obtained at different runs
+pertaining to different electric field conditions. If one wishes changing
+this convention, this can be done by customizing the keyword 'filename' in
 the subroutine 'parse_xml' of the class 'Material'.
 
 Once organized the files, insert the information regarding the folders'
@@ -47,10 +47,10 @@ additional details are given:
 • nframes:           number of frames per each set of data
 • atnum:             dictionary of atomic numbers
 • exclude_frames:    set of frames to skip in the writing of the extxyz
-• check_dielectrics: double check your inputs by determining the 
-                     high-frequency dielectric constant and by checking 
-                     that the acoustic sum rule for Born charges is 
-                     enforced. This is also useful to identify 
+• check_dielectrics: double check your inputs by determining the
+                     high-frequency dielectric constant and by checking
+                     that the acoustic sum rule for Born charges is
+                     enforced. This is also useful to identify
                      exclude_frames.
 
 Units in the QE xml file:
@@ -82,18 +82,16 @@ import sys
 from matplotlib.ticker import AutoMinorLocator
 from matplotlib.backends.backend_pdf import PdfPages
 
-plt.rcParams.update({
-    "font.size": 24,
-    "legend.fontsize": 20,
-    "legend.handlelength": 0.5
-})
+plt.rcParams.update(
+    {"font.size": 24, "legend.fontsize": 20, "legend.handlelength": 0.5}
+)
 
 # Constants
 bohr2A = 0.529177249
 A2bohr = 1.8897259886
 hartree2eV = 27.211396641308
 eps0const = 5.5263499562e-3  # in [e * Volt^{-1} * Ansgrom^{-1}]
-kB = 8.617333262145e-5      # in eV K-1
+kB = 8.617333262145e-5  # in eV K-1
 
 # Unit conversions for QE xml
 Eunit = hartree2eV
@@ -117,8 +115,8 @@ MATERIAL_CONFIGS = {
         "prefix": ["SiO2-T300", "SiO2-T600"],
         "xmlname": ["SiO2", "SiO2"],
         "check_dielectrics": True,
-        "exclude_frames": [[], []], # list of indexes to excllude
-        "iprint": 0
+        "exclude_frames": [[], []],  # list of indexes to excllude
+        "iprint": 0,
     },
     "BaTiO3": {
         "nframes": [1, 1],
@@ -127,10 +125,11 @@ MATERIAL_CONFIGS = {
         "prefix": ["BaTiO3", "BaTiO3-wall"],
         "xmlname": ["BaTiO3", "BaTiO3"],
         "check_dielectrics": True,
-        "exclude_frames": [[], []], # list of indexes to excllude
-        "iprint": 0
-    }
+        "exclude_frames": [[], []],  # list of indexes to excllude
+        "iprint": 0,
+    },
 }
+
 
 def axis_settings(ax):
     """Configure axis settings for plots."""
@@ -138,21 +137,11 @@ def axis_settings(ax):
         ax.spines[axis].set_linewidth(2.5)
     ax.xaxis.set_minor_locator(AutoMinorLocator(5))
     ax.yaxis.set_minor_locator(AutoMinorLocator(4))
-    
+
     for axis in [ax.xaxis, ax.yaxis]:
-        axis.set_tick_params(
-            which="major",
-            width=3.0,
-            length=12,
-            direction="in"
-        )
-        axis.set_tick_params(
-            which="minor",
-            width=3.0,
-            length=6,
-            direction="in"
-        )
-    
+        axis.set_tick_params(which="major", width=3.0, length=12, direction="in")
+        axis.set_tick_params(which="minor", width=3.0, length=6, direction="in")
+
     ax.yaxis.set_ticks_position("both")
 
 
@@ -169,7 +158,7 @@ def plot_init(label_x, label_y, title):
 
 class Atom:
     """Class representing an atom with its properties."""
-    
+
     def __init__(self, kind, r):
         self.kind = kind
         self.r = np.array(r)
@@ -177,7 +166,7 @@ class Atom:
 
 class QE_xmlfile:
     """Parser for QE xml file."""
-    
+
     def __init__(self, filename):
         with open(filename, "r") as f:
             self.data = f.readlines()
@@ -189,16 +178,19 @@ class QE_xmlfile:
         for i, line in enumerate(self.data):
             if "<a1>" in line:
                 for j in range(3):
-                    self.p[j, :] = np.array([
-                        float(x) for x in self.data[i + j]
-                        .replace(f"<a{j+1}>", "")
-                        .replace(f"</a{j+1}>", "")
-                        .split()
-                    ]) * Runit
-                self.vol = np.dot(
-                    self.p[0, :],
-                    np.cross(self.p[1, :], self.p[2, :])
-                )
+                    self.p[j, :] = (
+                        np.array(
+                            [
+                                float(x)
+                                for x in self.data[i + j]
+                                .replace(f"<a{j+1}>", "")
+                                .replace(f"</a{j+1}>", "")
+                                .split()
+                            ]
+                        )
+                        * Runit
+                    )
+                self.vol = np.dot(self.p[0, :], np.cross(self.p[1, :], self.p[2, :]))
                 break
 
     def get_metric(self):
@@ -218,9 +210,9 @@ class QE_xmlfile:
         """Get total energy."""
         for line in self.data:
             if "<etot>" in line:
-                self.etot = float(
-                    line.replace("<etot>", "").replace("</etot>", "")
-                ) * Eunit
+                self.etot = (
+                    float(line.replace("<etot>", "").replace("</etot>", "")) * Eunit
+                )
 
     def get_atoms(self):
         """Get atomic positions."""
@@ -241,27 +233,22 @@ class QE_xmlfile:
             if "<forces rank=" in line:
                 for j in range(self.nat):
                     L = self.data[i + 1 + j].split()
-                    self.atoms[j].forces = np.array(
-                        [float(x) for x in L]
-                    ) * Funit
+                    self.atoms[j].forces = np.array([float(x) for x in L]) * Funit
                 break
 
     def get_polarization(self):
         """Get electronic and ionic polarization."""
         for i, line in enumerate(self.data):
             if "<electronicDipole>" in line:
-                self.Pel = np.array(
-                    [float(x) for x in self.data[i + 1].split()]
-                )
+                self.Pel = np.array([float(x) for x in self.data[i + 1].split()])
                 L = self.data[i + 3]
                 Px = float(L.split("e>")[1].split(" ")[0])
                 Py = float(L.split()[1])
                 Pz = float(L.split("</")[0].split(" ")[-1])
                 self.Pion = np.array([Px, Py, Pz])
-                self.P = np.array([
-                    float(x) + float(y) 
-                    for x, y in zip(self.Pel, self.Pion)
-                ])
+                self.P = np.array(
+                    [float(x) + float(y) for x, y in zip(self.Pel, self.Pion)]
+                )
                 self.P *= Punit
                 self.P = self.unit_pol(self.P)
                 break
@@ -272,9 +259,10 @@ class QE_xmlfile:
         for i, line in enumerate(self.data):
             if "<stress rank" in line:
                 for j in range(3):
-                    self.S[j, :] = np.array(
-                        [float(x) for x in self.data[i + j + 1].split()]
-                    ) * Sunit
+                    self.S[j, :] = (
+                        np.array([float(x) for x in self.data[i + j + 1].split()])
+                        * Sunit
+                    )
                 break
 
     def get_efield(self):
@@ -282,9 +270,9 @@ class QE_xmlfile:
         for line in self.data:
             if "<electric_field_vector>" in line:
                 L = line.split(">")[1].split("</")[0].split(" ")
-                self.Efield = np.array(
-                    [float(L[0]), float(L[3]), float(L[6])]
-                ) * Efieldunit
+                self.Efield = (
+                    np.array([float(L[0]), float(L[3]), float(L[6])]) * Efieldunit
+                )
                 break
 
     def unit_pol(self, P):
@@ -297,16 +285,8 @@ class QE_xmlfile:
         pol_mod_frac = np.dot(np.linalg.inv(self.g), self.p).diagonal()
         P_frac = np.dot(self.g, P)
         Pnew = P_frac % (np.sign(P_frac) * pol_mod_frac)
-        Pnew = np.where(
-            Pnew > 0.5 * pol_mod_frac,
-            Pnew - pol_mod_frac,
-            Pnew
-        )
-        Pnew = np.where(
-            Pnew < -0.5 * pol_mod_frac,
-            Pnew + pol_mod_frac,
-            Pnew
-        )
+        Pnew = np.where(Pnew > 0.5 * pol_mod_frac, Pnew - pol_mod_frac, Pnew)
+        Pnew = np.where(Pnew < -0.5 * pol_mod_frac, Pnew + pol_mod_frac, Pnew)
         Pnew = np.dot(np.linalg.inv(self.g), Pnew)
         return Pnew
 
@@ -336,8 +316,15 @@ class Material:
     """
 
     def __init__(
-        self, system, nframes, nat, atnum, prefix, xmlname,
-        check_dielectrics=False, exclude_frames=None
+        self,
+        system,
+        nframes,
+        nat,
+        atnum,
+        prefix,
+        xmlname,
+        check_dielectrics=False,
+        exclude_frames=None,
     ):
         self.system = system
         self.nframes = nframes
@@ -406,16 +393,10 @@ class Material:
             # Calculate Born charges and polarizabilities
             for axis in ["x", "y", "z"]:
                 self.get_born_charges(
-                    self.q[idf, :, :, :],
-                    self.xml["0"],
-                    self.xml[axis],
-                    d[axis]
+                    self.q[idf, :, :, :], self.xml["0"], self.xml[axis], d[axis]
                 )
                 self.get_polarizabilities(
-                    self.α[idf, :, :],
-                    self.xml["0"],
-                    self.xml[axis],
-                    d[axis]
+                    self.α[idf, :, :], self.xml["0"], self.xml[axis], d[axis]
                 )
 
             # Calculate high-frequency dielectric constant
@@ -456,9 +437,7 @@ class Material:
     def check_dielectric_constants(self, idf):
         """Calculate and print dielectric constants for a frame."""
         for i in range(3):
-            self.εinf[idf, i] = 1 + self.α[idf, i, i] / (
-                eps0const * self.xml["0"].vol
-            )
+            self.εinf[idf, i] = 1 + self.α[idf, i, i] / (eps0const * self.xml["0"].vol)
         print(
             f"{idf}, εinf = [{self.εinf[idf, 0]:.8f} "
             f"{self.εinf[idf, 1]:.8f} {self.εinf[idf, 2]:.8f}]"
@@ -467,9 +446,7 @@ class Material:
     def print_dielectric_summary(self):
         """Print summary of dielectric properties."""
         # Dielectric constants
-        εinf_sum = np.sum(self.εinf, axis=0) / (
-            self.nframes - len(self.exclude_frames)
-        )
+        εinf_sum = np.sum(self.εinf, axis=0) / (self.nframes - len(self.exclude_frames))
         print(
             "ε∞ = 1 + 4pi/V * α = "
             f"[{εinf_sum[0]:.4f}, {εinf_sum[1]:.4f}, {εinf_sum[2]:.4f}]"
@@ -542,15 +519,15 @@ def merge_data(S_vec):
 
     # Initialize arrays for merged data
     merged = {
-        'p': np.zeros((nframes_tot, 3, 3)),
-        'E': np.zeros((nframes_tot, 4)),
-        'R': np.zeros((nframes_tot, nat, 3)),
-        'F': np.zeros((nframes_tot, nat, 3, 4)),
-        'S': np.zeros((nframes_tot, 3, 3, 4)),
-        'P': np.zeros((nframes_tot, 3, 4)),
-        'q': np.zeros((nframes_tot, nat, 3, 3)),
-        'α': np.zeros((nframes_tot, 3, 3)),
-        'at': np.zeros(nat)
+        "p": np.zeros((nframes_tot, 3, 3)),
+        "E": np.zeros((nframes_tot, 4)),
+        "R": np.zeros((nframes_tot, nat, 3)),
+        "F": np.zeros((nframes_tot, nat, 3, 4)),
+        "S": np.zeros((nframes_tot, 3, 3, 4)),
+        "P": np.zeros((nframes_tot, 3, 4)),
+        "q": np.zeros((nframes_tot, nat, 3, 3)),
+        "α": np.zeros((nframes_tot, 3, 3)),
+        "at": np.zeros(nat),
     }
 
     # Copy data from each Material instance
@@ -558,17 +535,17 @@ def merge_data(S_vec):
     for S in S_vec:
         for idf in range(S.nframes):
             idx = nprev + idf
-            merged['p'][idx] = S.p[idf]
-            merged['E'][idx] = S.E[idf]
-            merged['R'][idx] = S.R[idf]
-            merged['F'][idx] = S.F[idf]
-            merged['S'][idx] = S.S[idf]
-            merged['P'][idx] = S.P[idf]
-            merged['q'][idx] = S.q[idf]
-            merged['α'][idx] = S.α[idf]
+            merged["p"][idx] = S.p[idf]
+            merged["E"][idx] = S.E[idf]
+            merged["R"][idx] = S.R[idf]
+            merged["F"][idx] = S.F[idf]
+            merged["S"][idx] = S.S[idf]
+            merged["P"][idx] = S.P[idf]
+            merged["q"][idx] = S.q[idf]
+            merged["α"][idx] = S.α[idf]
         nprev += S.nframes
-    
-    merged['at'] = S_vec[0].at
+
+    merged["at"] = S_vec[0].at
     return merged
 
 
@@ -592,21 +569,17 @@ def write_frame(f, M, idf, nprev, data, iprint):
 
     # Write header with lattice and properties
     lattice = " ".join(str(x) for x in M.p[idf, :, :].ravel())
-    polarization = " ".join(
-        str(x) for x in M.P[idf, :, iprint].ravel()
-    )
+    polarization = " ".join(str(x) for x in M.P[idf, :, iprint].ravel())
     polarizability = " ".join(str(x) for x in M.α[idf, :, :].ravel())
-    stress = " ".join(
-        str(x) for x in M.S[idf, :, :, iprint].ravel()
-    )
+    stress = " ".join(str(x) for x in M.S[idf, :, :, iprint].ravel())
 
     header = (
         f'Lattice="{lattice}" '
-        'Properties=species:S:1:pos:R:3:born_charge:R:9:forces:R:3 '
+        "Properties=species:S:1:pos:R:3:born_charge:R:9:forces:R:3 "
         f'polarization="{polarization}" '
         f'polarizability="{polarizability}" '
-        f'original_dataset_index={idf + nprev} '
-        f'total_energy={M.E[idf, iprint]} '
+        f"original_dataset_index={idf + nprev} "
+        f"total_energy={M.E[idf, iprint]} "
         f'stress="{stress}" '
         'pbc="T T T"\n'
     )
@@ -624,8 +597,7 @@ def write_atom(f, M, idf, n, iprint):
     born_charges = M.q[idf, n, :, :].ravel()
     pos = M.R[idf, n, :]
 
-    data = ([atom.kind] + pos.tolist() + born_charges.tolist() + 
-            forces.tolist())
+    data = [atom.kind] + pos.tolist() + born_charges.tolist() + forces.tolist()
     fmt = "{:5s}" + " {:14.10f}" * 15 + "\n"
     f.write(fmt.format(*data))
 
@@ -636,27 +608,27 @@ def plot_histograms(merged_data, system, iprint):
         # Energy
         plot_histogram(
             pdf,
-            merged_data['E'][:, iprint] / merged_data['at'].size,
+            merged_data["E"][:, iprint] / merged_data["at"].size,
             "Energy per atom (eV)",
-            title="$E$"
+            title="$E$",
         )
 
         # Forces
         for i in range(3):
             plot_histogram(
                 pdf,
-                merged_data['F'][:, :, i, iprint].ravel(),
+                merged_data["F"][:, :, i, iprint].ravel(),
                 "Force (eV/A)",
-                title=f"$F_{dinv[i]}$"
+                title=f"$F_{dinv[i]}$",
             )
 
         # Polarization
         for i in range(3):
             plot_histogram(
                 pdf,
-                merged_data['P'][:, i, iprint].ravel(),
+                merged_data["P"][:, i, iprint].ravel(),
                 "Polarization (e$\cdot$A)",
-                title=f"$P_{dinv[i]}$"
+                title=f"$P_{dinv[i]}$",
             )
 
         # Born charges
@@ -664,9 +636,9 @@ def plot_histograms(merged_data, system, iprint):
             for j in range(3):
                 plot_histogram(
                     pdf,
-                    merged_data['q'][:, :, i, j].ravel(),
+                    merged_data["q"][:, :, i, j].ravel(),
                     "Born charges (e)",
-                    title=f"$Z^*_{{{i}{j}}}$"
+                    title=f"$Z^*_{{{i}{j}}}$",
                 )
 
         # Polarizability
@@ -674,9 +646,9 @@ def plot_histograms(merged_data, system, iprint):
             for j in range(3):
                 plot_histogram(
                     pdf,
-                    1 + merged_data['α'][:, i, j].ravel(),
+                    1 + merged_data["α"][:, i, j].ravel(),
                     "Polarizability (e$\cdot$A$^{2}\cdot$V$^{-1}$)",
-                    title=f"$α_{{{i}{j}}}$"
+                    title=f"$α_{{{i}{j}}}$",
                 )
 
 
@@ -690,7 +662,7 @@ def plot_histogram(pdf, data_array, xlabel, title, num_bins=30):
         density=False,
         alpha=0.7,
         lw=1.5,
-        label="Histogram"
+        label="Histogram",
     )
     plt.title(title)
     pdf.savefig()
@@ -710,8 +682,12 @@ if __name__ == "__main__":
     config = MATERIAL_CONFIGS[system]
 
     # Validate input dimensions
-    dims_match = (len(config["nframes"]) == len(config["nat"]) ==
-                 len(config["prefix"]) == len(config["exclude_frames"]))
+    dims_match = (
+        len(config["nframes"])
+        == len(config["nat"])
+        == len(config["prefix"])
+        == len(config["exclude_frames"])
+    )
     if not dims_match:
         print("Error: check dimensions inputs!")
         exit()
@@ -730,7 +706,7 @@ if __name__ == "__main__":
                 prefix=config["prefix"][i],
                 xmlname=config["xmlname"][i],
                 check_dielectrics=config["check_dielectrics"],
-                exclude_frames=config["exclude_frames"][i]
+                exclude_frames=config["exclude_frames"][i],
             )
         )
 

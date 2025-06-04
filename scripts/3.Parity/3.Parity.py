@@ -55,21 +55,19 @@ MATERIAL_CONFIGS = {
     "SiO2": {
         "dft_file": "SiO2/SiO2.xyz",
         "ml_file": "SiO2/SiO2-ML.xyz",
-        "output_file": "SiO2/SiO2.pdf"
+        "output_file": "SiO2/SiO2.pdf",
     },
     "BaTiO3": {
         "dft_file": "BaTiO3/BaTiO3.xyz",
         "ml_file": "BaTiO3/BaTiO3-ML.xyz",
-        "output_file": "BaTiO3/BaTiO3.pdf"
-    }
+        "output_file": "BaTiO3/BaTiO3.pdf",
+    },
 }
 
 # Plot settings
-plt.rcParams.update({
-    "font.size": 24,
-    "legend.fontsize": 20,
-    "legend.handlelength": 0.5
-})
+plt.rcParams.update(
+    {"font.size": 24, "legend.fontsize": 20, "legend.handlelength": 0.5}
+)
 
 
 def axis_settings(ax):
@@ -78,30 +76,10 @@ def axis_settings(ax):
         ax.spines[axis].set_linewidth(2.5)
     ax.xaxis.set_minor_locator(AutoMinorLocator(2))
     ax.yaxis.set_minor_locator(AutoMinorLocator(2))
-    ax.xaxis.set_tick_params(
-        which="major",
-        width=3.0,
-        length=12,
-        direction="in"
-    )
-    ax.xaxis.set_tick_params(
-        which="minor",
-        width=3.0,
-        length=6,
-        direction="in"
-    )
-    ax.yaxis.set_tick_params(
-        which="major",
-        width=3.0,
-        length=12,
-        direction="in"
-    )
-    ax.yaxis.set_tick_params(
-        which="minor",
-        width=3.0,
-        length=6,
-        direction="in"
-    )
+    ax.xaxis.set_tick_params(which="major", width=3.0, length=12, direction="in")
+    ax.xaxis.set_tick_params(which="minor", width=3.0, length=6, direction="in")
+    ax.yaxis.set_tick_params(which="major", width=3.0, length=12, direction="in")
+    ax.yaxis.set_tick_params(which="minor", width=3.0, length=6, direction="in")
     ax.yaxis.set_ticks_position("both")
 
 
@@ -159,27 +137,29 @@ class extxyz:
 
             # Parse per-frame quantities
             self.p[frame, :, :] = np.array(
-                [float(x) for x in L[idx_latt:idx_latt + 9]]
+                [float(x) for x in L[idx_latt : idx_latt + 9]]
             ).reshape(3, 3)
-            self.g[frame, 0, :] = self.p[frame, 0, :] / np.linalg.norm(self.p[frame, 0, :])
-            self.g[frame, 1, :] = self.p[frame, 1, :] / np.linalg.norm(self.p[frame, 1, :])
-            self.g[frame, 2, :] = self.p[frame, 2, :] / np.linalg.norm(self.p[frame, 2, :])
+            self.g[frame, 0, :] = self.p[frame, 0, :] / np.linalg.norm(
+                self.p[frame, 0, :]
+            )
+            self.g[frame, 1, :] = self.p[frame, 1, :] / np.linalg.norm(
+                self.p[frame, 1, :]
+            )
+            self.g[frame, 2, :] = self.p[frame, 2, :] / np.linalg.norm(
+                self.p[frame, 2, :]
+            )
             self.E[frame] = float(L[idx_E])
             self.S[frame, :, :] = np.array(
-                [float(x) for x in L[idx_S:idx_S + 9]]
+                [float(x) for x in L[idx_S : idx_S + 9]]
             ).reshape(3, 3)
-            self.P[frame, :] = np.array(
-                [float(x) for x in L[idx_P:idx_P + 3]]
-            )
+            self.P[frame, :] = np.array([float(x) for x in L[idx_P : idx_P + 3]])
             self.α[frame, :, :] = np.array(
-                [float(x) for x in L[idx_α:idx_α + 9]]
+                [float(x) for x in L[idx_α : idx_α + 9]]
             ).reshape(3, 3)
 
             # Apply modulo polarization
             self.P[frame, :] = self.unit_pol(
-                self.P[frame, :],
-                self.g[frame, :, :],
-                self.p[frame, :, :]
+                self.P[frame, :], self.g[frame, :, :], self.p[frame, :, :]
             )
 
             # Parse per-atom quantities
@@ -188,9 +168,9 @@ class extxyz:
                 self.R[frame, iat, :] = np.array([float(x) for x in L[1:4]])
                 self.F[frame, iat, :] = np.array([float(x) for x in L[4:7]])
                 self.q[frame, iat, :, :] = np.array(
-                    [float(x) for x in L[4:4 + 9]]
+                    [float(x) for x in L[4 : 4 + 9]]
                 ).reshape(3, 3)
-                self.F[frame, iat, :] = np.array([float(x) for x in L[13:13 + 3]])
+                self.F[frame, iat, :] = np.array([float(x) for x in L[13 : 13 + 3]])
 
     def unit_pol(self, P, g, p):
         """Process polarization vector to handle periodic boundary conditions.
@@ -212,16 +192,8 @@ class extxyz:
         pol_mod_frac = np.dot(np.linalg.inv(g), p).diagonal()
         P_frac = np.dot(g, P)
         Pnew = P_frac % (np.sign(P_frac) * pol_mod_frac)
-        Pnew = np.where(
-            Pnew > 0.5 * pol_mod_frac,
-            Pnew - pol_mod_frac,
-            Pnew
-        )
-        Pnew = np.where(
-            Pnew < -0.5 * pol_mod_frac,
-            Pnew + pol_mod_frac,
-            Pnew
-        )
+        Pnew = np.where(Pnew > 0.5 * pol_mod_frac, Pnew - pol_mod_frac, Pnew)
+        Pnew = np.where(Pnew < -0.5 * pol_mod_frac, Pnew + pol_mod_frac, Pnew)
         Pnew = np.dot(np.linalg.inv(g), Pnew)
         return Pnew
 
@@ -261,7 +233,7 @@ def parity_plot(y1, y2, title, type, pdf):
         plt.scatter(y1, y2, s=10)
         lims = [
             np.min([ax.get_xlim(), ax.get_ylim()]),
-            np.max([ax.get_xlim(), ax.get_ylim()])
+            np.max([ax.get_xlim(), ax.get_ylim()]),
         ]
         ax.plot(lims, lims, "-", alpha=0.75, zorder=0, c="r", lw=2)
         plt.scatter(y1, y2, color="blue", alpha=0.6)
@@ -271,15 +243,9 @@ def parity_plot(y1, y2, title, type, pdf):
         colors = [(1, 1, 1)]
         colors.extend(plt.cm.jet(i) for i in range(plt.cm.jet.N))
         cmap = LinearSegmentedColormap.from_list(
-            "custom_jet_white",
-            colors,
-            plt.cm.jet.N
+            "custom_jet_white", colors, plt.cm.jet.N
         )
-        hist, xedges, yedges = np.histogram2d(
-            y1.ravel(),
-            y2.ravel(),
-            bins=N_bins
-        )
+        hist, xedges, yedges = np.histogram2d(y1.ravel(), y2.ravel(), bins=N_bins)
         extent = [xedges[0], xedges[-1], yedges[0], yedges[-1]]
         plt.imshow(
             hist.T,
@@ -289,11 +255,11 @@ def parity_plot(y1, y2, title, type, pdf):
             interpolation="gaussian",
             aspect="auto",
             vmin=0,
-            vmax=np.max(hist)
+            vmax=np.max(hist),
         )
         lims = [
             np.min([ax.get_xlim(), ax.get_ylim()]),
-            np.max([ax.get_xlim(), ax.get_ylim()])
+            np.max([ax.get_xlim(), ax.get_ylim()]),
         ]
         ax.plot(lims, lims, ":", alpha=0.30, c="r", lw=2)
         plt.colorbar()
@@ -302,10 +268,9 @@ def parity_plot(y1, y2, title, type, pdf):
     ax.set_xlim(lims)
     ax.set_ylim(lims)
 
-    textstr = "\n".join((
-        r"mae  = %.4f" % (round(mae, 4),),
-        r"rmse = %.4f" % (round(rmse, 4),)
-    ))
+    textstr = "\n".join(
+        (r"mae  = %.4f" % (round(mae, 4),), r"rmse = %.4f" % (round(rmse, 4),))
+    )
     props = dict(boxstyle="round", facecolor="wheat", alpha=0.5)
     ax.text(0.28, 0.82, textstr, transform=ax.transAxes, bbox=props, fontsize=16)
 
@@ -333,33 +298,15 @@ if __name__ == "__main__":
 
         # Positions
         for i in range(3):
-            parity_plot(
-                S1.R[:, :, i],
-                S2.R[:, :, i],
-                f"$R_{d[i]}$",
-                type=0,
-                pdf=pdf
-            )
+            parity_plot(S1.R[:, :, i], S2.R[:, :, i], f"$R_{d[i]}$", type=0, pdf=pdf)
 
         # Forces
         for i in range(3):
-            parity_plot(
-                S1.F[:, :, i],
-                S2.F[:, :, i],
-                f"$F_{d[i]}$",
-                type=1,
-                pdf=pdf
-            )
+            parity_plot(S1.F[:, :, i], S2.F[:, :, i], f"$F_{d[i]}$", type=1, pdf=pdf)
 
         # Polarization
         for i in range(3):
-            parity_plot(
-                S1.P[:, i],
-                S2.P[:, i],
-                f"$P_{d[i]}$",
-                type=1,
-                pdf=pdf
-            )
+            parity_plot(S1.P[:, i], S2.P[:, i], f"$P_{d[i]}$", type=1, pdf=pdf)
 
         # Born charges
         for i in range(3):
@@ -369,7 +316,7 @@ if __name__ == "__main__":
                     S2.q[:, :, i, j],
                     f"$Z_{{{d[i]}{d[j]}}}$",
                     type=1,
-                    pdf=pdf
+                    pdf=pdf,
                 )
 
         # Polarizability
@@ -380,5 +327,5 @@ if __name__ == "__main__":
                     S2.α[:, i, j],
                     f"$α_{{{d[i]}{d[j]}}}$",
                     type=1,
-                    pdf=pdf
+                    pdf=pdf,
                 )
