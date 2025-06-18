@@ -38,7 +38,7 @@ jobs:
       uses: mir-group/nequip-gh-actions/clone@main
       with:
         package_names: "nequip:allegro"
-        ssh_keys: "${{ secrets.SSH_KEY_NEQUIP }}:${{ secrets.SSH_KEY_ALLEGRO }}"
+        ssh_keys: "${{ secrets.NEQUIP_KEY }}:${{ secrets.ALLEGRO_KEY }}"
         private_flag: ${{ github.event.repository.private}}
         branch: ${{ github.event_name == 'pull_request' && github.base_ref || github.ref_name}}
     - name: Install PyTorch
