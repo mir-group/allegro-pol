@@ -13,7 +13,7 @@ authors = [
     {name = "Materials Intelligence Research Group"},
 ]
 dependencies = [
-    "nequip @ file://./nequip, # 0.6.2 with bugfixes
+    "nequip @ git+https://github.com/mir-group/nequip.git@b9de7ceb497a458e4400c16c3a53e4a5ed05cfe3", # 0.6.2 with bugfixes
     "nequip-allegro==0.3.0",
 ]
 
