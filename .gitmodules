@@ -1,0 +1,3 @@
+[submodule "nequip"]
+	path = nequip
+	url = https://github.com/mir-group/nequip.git
