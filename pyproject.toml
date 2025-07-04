@@ -13,7 +13,9 @@ authors = [
     {name = "Materials Intelligence Research Group"},
 ]
 dependencies = [
-    "nequip @ git+https://github.com/mir-group/nequip.git@b9de7ceb497a458e4400c16c3a53e4a5ed05cfe3", # 0.6.2 with bugfixes
+    "torch<2.0",
+    "numpy<2.0",
+    "nequip @ git+https://github.com/mir-group/nequip.git@b49ca7ba3ecf94312210ee7e0c3270d797e6aee1", # 0.6.2 with bugfixes
     "nequip-allegro==0.3.0",
 ]
 
