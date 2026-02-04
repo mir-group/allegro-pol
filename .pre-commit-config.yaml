@@ -1,0 +1,27 @@
+exclude: '^(\.git|\.tox|.*\.xyz|.*\.inp|.*\.dat|.*\.data|.*\.out|lammps_infiles/.*|scripts/[0-9].*)'
+default_stages: [pre-commit]
+fail_fast: true
+
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v5.0.0
+    hooks:
+      - id: check-case-conflict
+      - id: check-symlinks
+      - id: destroyed-symlinks
+      - id: end-of-file-fixer
+      - id: mixed-line-ending
+        args: ['--fix=lf']
+      - id: trailing-whitespace
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.12.2
+    hooks:
+      # Run the linter (respects [tool.ruff.lint] in pyproject.toml)
+      - id: ruff
+        args: [--fix]
+      # Run the formatter (respects [tool.ruff.format] in pyproject.toml)
+      - id: ruff-format
+  - repo: https://github.com/adrienverge/yamllint
+    rev: v1.37.1
+    hooks:
+      - id: yamllint
