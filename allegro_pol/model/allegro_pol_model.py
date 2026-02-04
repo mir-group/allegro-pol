@@ -129,7 +129,6 @@ def _AllegroPolarizationEnergyModel(
     avg_num_neighbors: Optional[float] = None,
     # allegro layers defaults
     weight_individual_irreps: bool = True,
-    scatter_features: bool = False,
     # per atom energy params
     per_type_energy_scales: Optional[Union[float, Sequence[float]]] = None,
     per_type_energy_shifts: Optional[Union[float, Sequence[float]]] = None,
@@ -211,7 +210,6 @@ def _AllegroPolarizationEnergyModel(
         tp_path_channel_coupling=tp_path_channel_coupling,
         # best to use defaults for these
         weight_individual_irreps=weight_individual_irreps,
-        scatter_features=scatter_features,
         # fields
         tensor_basis_in_field=AtomicDataDict.EDGE_ATTRS_KEY,
         tensor_features_in_field=AtomicDataDict.EDGE_FEATURES_KEY,
