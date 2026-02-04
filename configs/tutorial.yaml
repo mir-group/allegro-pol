@@ -37,7 +37,7 @@ data:
 
   transforms:
     - _target_: nequip.data.transforms.ChemicalSpeciesToAtomTypeMapper
-      chemical_symbols: ${chemical_symbols}
+      model_type_names: ${model_type_names}
     - _target_: nequip.data.transforms.NeighborListTransform
       r_max: ${cutoff_radius}
 
@@ -83,7 +83,7 @@ training_module:
 
   # Loss function with all polarization quantities
   loss:
-    _target_: allegro_pol.train.EnergyForecPolarizationLoss
+    _target_: allegro_pol.train.EnergyForcePolarizationLoss
     coeffs:
       total_energy: 1.0
       forces: 1.0
@@ -98,7 +98,7 @@ training_module:
 
   # Validation metrics with all polarization quantities
   val_metrics:
-    _target_: allegro_pol.train.EnergyForecPolarizationMetrics
+    _target_: allegro_pol.train.EnergyForcePolarizationMetrics
     coeffs:
       per_atom_energy_mae: 1.0
       forces_mae: 1.0
@@ -178,6 +178,3 @@ training_module:
     per_type_energy_scales: ${training_data_stats:forces_rms}
     per_type_energy_scales_trainable: false
     per_type_energy_shifts_trainable: false
-
-global_options:
-  allow_tf32: false
