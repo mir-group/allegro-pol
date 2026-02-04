@@ -36,7 +36,6 @@ tau_values.insert(0, step_values[0])  # Add the first tau (from 0 to the first s
 
 # Loop through input files
 for i, infile in enumerate(files):
-
     print(f"Processing file: {infile}")
 
     start_step = step_values[i]  # Starting point for the current infile
@@ -73,7 +72,6 @@ for i, infile in enumerate(files):
         os.system(cmd_awk)
 
     else:
-
         # For the last file, append all lines starting from start_step, but exclude "Loop time" and below
         # cmd_awk_last = f"awk '$1 >= {start_step} && !found {{if (/Loop time/) found=1; else print;}}' temp.dat >> {infile_tot}"
         cmd_awk_last = f"awk '$1 >= {start_step} && !found {{if (/Loop time/) found=1; else if (printed++) print;}}' temp.dat >> {infile_tot}"
@@ -92,7 +90,7 @@ header_line = int(
     .strip()
 )
 step_lines = (
-    os.popen(f"sed -n '{header_line+1},$p' {infile_tot} | awk '{{print $1}}'")
+    os.popen(f"sed -n '{header_line + 1},$p' {infile_tot} | awk '{{print $1}}'")
     .read()
     .strip()
     .split("\n")
@@ -126,10 +124,8 @@ if len(step_numbers) > 1:
     iter = 0
 
     for i in range(1, len(step_numbers) - 1):
-
         # Check for spacing inconsistencies
         if step_numbers[i + 1] - step_numbers[i] != reference_diff:
-
             spacing_check = False
             print(
                 f"\nMismatch found between steps {step_numbers[i]} and {step_numbers[i + 1]}: difference is {step_numbers[i + 1] - step_numbers[i]} (expected {reference_diff})"

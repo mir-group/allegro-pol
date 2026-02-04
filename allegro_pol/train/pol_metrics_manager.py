@@ -147,9 +147,9 @@ def EnergyForecPolarizationMetrics(
         do_polarizability: Include polarizability metrics
         type_names: Atom type names for per-type metrics
     """
-    assert all(
-        [k in _EFP_METRICS_COEFFS_KEYS for k in coeffs.keys()]
-    ), f"Unrecognized key found in `coeffs`, only the following are recognized: {_EFP_METRICS_COEFFS_KEYS}"
+    assert all([k in _EFP_METRICS_COEFFS_KEYS for k in coeffs.keys()]), (
+        f"Unrecognized key found in `coeffs`, only the following are recognized: {_EFP_METRICS_COEFFS_KEYS}"
+    )
 
     metrics = [
         # Energy metrics

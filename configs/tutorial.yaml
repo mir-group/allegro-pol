@@ -29,7 +29,7 @@ data:
   include_keys:
     - polarization
     - polarizability
-  
+
   # this is because of how the example xyz records these keys
   key_mapping:
     total_energy: total_energy
