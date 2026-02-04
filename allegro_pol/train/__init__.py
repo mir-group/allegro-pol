@@ -4,14 +4,14 @@ from .folded_pol_metrics import (
     FoldedPerAtomPolarizationRMSE,
 )
 from .pol_metrics_manager import (
-    EnergyForecPolarizationLoss,
-    EnergyForecPolarizationMetrics,
+    EnergyForcePolarizationLoss,
+    EnergyForcePolarizationMetrics,
 )
 
 __all__ = [
     "FoldedPerAtomPolarizationMSE",
     "FoldedPerAtomPolarizationMAE",
     "FoldedPerAtomPolarizationRMSE",
-    "EnergyForecPolarizationLoss",
-    "EnergyForecPolarizationMetrics",
+    "EnergyForcePolarizationLoss",
+    "EnergyForcePolarizationMetrics",
 ]

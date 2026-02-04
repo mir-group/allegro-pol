@@ -35,7 +35,7 @@ _EFP_METRICS_COEFFS_KEYS: Final[List[str]] = [
 ]
 
 
-def EnergyForecPolarizationLoss(
+def EnergyForcePolarizationLoss(
     coeffs: Dict[str, float] = {
         AtomicDataDict.TOTAL_ENERGY_KEY: 1.0,
         AtomicDataDict.FORCE_KEY: 1.0,
@@ -119,7 +119,7 @@ def EnergyForecPolarizationLoss(
     return MetricsManager(metrics, type_names=type_names)
 
 
-def EnergyForecPolarizationMetrics(
+def EnergyForcePolarizationMetrics(
     coeffs: Dict[str, float] = {
         "total_energy_rmse": 1.0,
         "per_atom_energy_rmse": None,
