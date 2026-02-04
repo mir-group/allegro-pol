@@ -146,12 +146,19 @@ class TwoBodySphericalHarmonicElectricFieldTensorEmbed(
         )  # (Nbatch, lm_field)
 
         # map electric field sh embedding: (Nbatch, lm) -> (Nedge, lm)
-        edge_batch = torch.index_select(
-            batch, 0, data[AtomicDataDict.EDGE_INDEX_KEY][0]
-        )  # (Nedge,)
-        per_edge_field_sh_embed = torch.index_select(
-            elec_field_sh_embed, 0, edge_batch
-        )  # (Nedge, lm_field)
+        if AtomicDataDict.BATCH_KEY in data:
+            edge_batch = torch.index_select(
+                batch, 0, data[AtomicDataDict.EDGE_INDEX_KEY][0]
+            )  # (Nedge,)
+            per_edge_field_sh_embed = torch.index_select(
+                elec_field_sh_embed, 0, edge_batch
+            )  # (Nedge, lm_field)
+        else:
+            # single frame case: expand to match number of edges
+            num_edges = AtomicDataDict.num_edges(data)
+            per_edge_field_sh_embed = elec_field_sh_embed.expand(
+                num_edges, -1
+            )  # (Nedge, lm_field)
 
         # combine edge and electric field spherical harmonics
         combined_sh = torch.cat(
