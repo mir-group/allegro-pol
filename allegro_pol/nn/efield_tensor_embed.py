@@ -114,41 +114,28 @@ class TwoBodySphericalHarmonicElectricFieldTensorEmbed(
         )
         assert not self.env_embed_linear.is_nonlinear
 
-        self._output_dtype = torch.get_default_dtype()
+        self.model_dtype = torch.get_default_dtype()
 
     def forward(self, data: AtomicDataDict.Type) -> AtomicDataDict.Type:
         # sph embedding
         data = with_edge_vectors_(data, with_lengths=False)
         edge_vec = data[AtomicDataDict.EDGE_VECTORS_KEY]
-        edge_sh = self.sh_edge(edge_vec).to(self._output_dtype)  # (Nedge, lm_edge)
-
-        # process electric field
-        if AtomicDataDict.BATCH_KEY in data:
-            batch = data[AtomicDataDict.BATCH_KEY]
-            num_batch = AtomicDataDict.num_frames(data)
-        else:
-            num_batch = 1
+        edge_sh = self.sh_edge(edge_vec).to(self.model_dtype)  # (Nedge, lm_edge)
 
         # get electric field and normalize
-        if _keys.EXTERNAL_ELECTRIC_FIELD_KEY not in data:
-            data[_keys.EXTERNAL_ELECTRIC_FIELD_KEY] = torch.zeros(
-                num_batch,
-                3,
-                dtype=edge_vec.dtype,
-                device=edge_vec.device,
-            )
-
         elec_field = data[_keys.EXTERNAL_ELECTRIC_FIELD_KEY].div(
             self.electric_field_normalization
         )  # (Nbatch, 3)
         elec_field_sh_embed = self.sh_elec_field(elec_field).to(
-            self._output_dtype
+            self.model_dtype
         )  # (Nbatch, lm_field)
 
         # map electric field sh embedding: (Nbatch, lm) -> (Nedge, lm)
         if AtomicDataDict.BATCH_KEY in data:
             edge_batch = torch.index_select(
-                batch, 0, data[AtomicDataDict.EDGE_INDEX_KEY][0]
+                data[AtomicDataDict.BATCH_KEY],
+                0,
+                data[AtomicDataDict.EDGE_INDEX_KEY][0],
             )  # (Nedge,)
             per_edge_field_sh_embed = torch.index_select(
                 elec_field_sh_embed, 0, edge_batch
@@ -157,7 +144,7 @@ class TwoBodySphericalHarmonicElectricFieldTensorEmbed(
             # single frame case: expand to match number of edges
             num_edges = AtomicDataDict.num_edges(data)
             per_edge_field_sh_embed = elec_field_sh_embed.expand(
-                num_edges, -1
+                num_edges, elec_field_sh_embed.size(1)
             )  # (Nedge, lm_field)
 
         # combine edge and electric field spherical harmonics
