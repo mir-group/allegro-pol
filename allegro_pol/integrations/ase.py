@@ -18,7 +18,7 @@ class NequIPPolCalculator(NequIPCalculator):
     ]
 
     @classmethod
-    def get_aoti_compile_target(cls) -> Dict:
+    def _get_aoti_compile_target(cls) -> Dict:
         return COMPILE_TARGET_DICT[AOTI_ASE_POL_BC_TARGET]
 
     def save_extra_outputs(self, out: AtomicDataDict.Type):
