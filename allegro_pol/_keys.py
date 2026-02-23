@@ -1,4 +1,4 @@
-from nequip.data import register_fields, ABBREV
+from nequip.data._key_registry import register_fields, ABBREV
 
 from typing import Final
 
