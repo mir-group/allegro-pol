@@ -5,17 +5,13 @@ The ideas are described in ["Unified differentiable learning of electric respons
 
 ## Installation
 
-This installation requires `nequip>=0.10.1` and `nequip-allegro>=0.6.0`, which will automatically be installed with `allegro-pol`.
-
 It is strongly recommended to create a fresh virtual environment. For example,
 ```
-conda create -n allegro-pol python=3.11
+conda create -n allegro-pol python=3.12
 conda activate allegro-pol
 ```
 
-It may be advisable to install an older version of PyTorch (e.g. PyTorch 1.11).
-
-Then, install `allegro-pol`, which will install all essential dependencies.
+Then, install `allegro-pol`, which will install all essential dependencies (including `nequip` and `nequip-allegro`).
 ```
 git clone https://github.com/mir-group/allegro-pol.git
 cd allegro-pol
@@ -26,6 +22,69 @@ Users may wish to install additional dependencies such as the Weights and Biases
 ```
 pip install wandb
 ```
+
+## Packaging and Compilation
+
+`allegro-pol` is compatible with NequIP's packaging and compilation workflows:
+
+- Packaging with [`nequip-package`](https://nequip.readthedocs.io/en/latest/guide/getting-started/workflow.html#packaging)
+- Compilation with [`nequip-compile`](https://nequip.readthedocs.io/en/latest/guide/getting-started/workflow.html#compilation)
+
+### Package a trained model
+
+```bash
+nequip-package build path/to/model.ckpt path/to/model.nequip.zip
+```
+
+### Compile for ASE
+
+Use the `allegro-pol` ASE target to generate a compiled model for `allegro_pol.integrations.ase.NequIPPolCalculator`:
+
+```bash
+nequip-compile \
+  path/to/model.ckpt \
+  path/to/compiled_model.nequip.pt2 \
+  --device cuda \
+  --mode aotinductor \
+  --target ase_pol_bc
+```
+
+Then load it with the `allegro-pol` ASE calculator:
+
+```python
+from allegro_pol.integrations.ase import NequIPPolCalculator
+
+calculator = NequIPPolCalculator.from_compiled_model(
+    compile_path="path/to/compiled_model.nequip.pt2",
+    device="cuda",  # or "cpu"
+)
+```
+
+### Compile for LAMMPS pair styles
+
+Use an `allegro-pol` LAMMPS target with `nequip-compile` for pair-style integrations:
+
+```bash
+nequip-compile \
+  path/to/model.ckpt \
+  path/to/compiled_model.nequip.pt2 \
+  --device cuda \
+  --mode aotinductor \
+  --target pair_allegro_pol
+```
+
+If Born charges and polarizability are needed in outputs, use:
+
+```bash
+nequip-compile \
+  path/to/model.ckpt \
+  path/to/compiled_model_bc.nequip.pt2 \
+  --device cuda \
+  --mode aotinductor \
+  --target pair_allegro_pol_bc
+```
+
+For installation and usage of LAMMPS pair styles, see [`pair_nequip_allegro`](https://github.com/mir-group/pair_nequip_allegro).
 
 ## Example
 
@@ -41,7 +100,9 @@ Pre- and post-processing scripts can be found in `scripts`, along with a tutoria
 
 ## Cite
 
-If you use this code in your own work, please cite [our work](https://www.nature.com/articles/s41467-025-59304-1):
+If you use this code in your own work, please cite:
+
+ 1. The paper introducing the unified differentiable electric-response model: [Unified differentiable learning of electric response](https://www.nature.com/articles/s41467-025-59304-1)
 ```
 @article{falletta2025unified,
   title={Unified differentiable learning of electric response},
@@ -52,6 +113,16 @@ If you use this code in your own work, please cite [our work](https://www.nature
   pages={4031},
   year={2025},
   publisher={Nature Publishing Group UK London}
+}
+```
+
+ 2. The [preprint describing the NequIP software framework](https://arxiv.org/abs/2504.16068)
+```
+@article{tan2025high,
+  title={High-performance training and inference for deep equivariant interatomic potentials},
+  author={Tan, Chuin Wei and Descoteaux, Marc L and Kotak, Mit and Nascimento, Gabriel de Miranda and Kavanagh, Se{\'a}n R and Zichi, Laura and Wang, Menghang and Saluja, Aadit and Hu, Yizhong R and Smidt, Tess and Johansson, Anders and Witt, William C. and Kozinsky, Boris and Musaelian, Albert},
+  journal={arXiv preprint arXiv:2504.16068},
+  year={2025}
 }
 ```
 
