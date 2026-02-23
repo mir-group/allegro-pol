@@ -2,8 +2,10 @@
 from nequip.data import AtomicDataDict
 from nequip.scripts._compile_utils import (
     ASE_OUTPUTS,
+    BATCH_INPUTS,
     LMP_OUTPUTS,
     PAIR_NEQUIP_INPUTS,
+    batched_data_settings,
     single_frame_data_settings,
     single_frame_batch_map_settings,
     register_compile_targets,
@@ -16,6 +18,7 @@ from ._keys import POLARIZABILITY_KEY
 AOTI_PAIR_ALLEGRO_POL_TARGET = "pair_allegro_pol"
 AOTI_PAIR_ALLEGRO_POL_BC_TARGET = "pair_allegro_pol_bc"
 AOTI_ASE_POL_BC_TARGET = "ase_pol_bc"
+AOTI_BATCH_POL_BC_TARGET = "batch_pol_bc"
 
 
 PAIR_ALLEGRO_POL_OUTPUTS = [*LMP_OUTPUTS, AtomicDataDict.POLARIZATION_KEY]
@@ -53,10 +56,18 @@ ASE_POL_BC_TARGET = {
     "data_settings": single_frame_data_settings,
 }
 
+BATCH_POL_BC_TARGET = {
+    "input": BATCH_INPUTS,
+    "output": ASE_POL_BC_OUTPUTS,
+    "batch_map_settings": lambda batch_map: batch_map,  # no static shapes
+    "data_settings": batched_data_settings,
+}
+
 register_compile_targets(
     {
         AOTI_PAIR_ALLEGRO_POL_TARGET: PAIR_ALLEGRO_POL_TARGET,
         AOTI_PAIR_ALLEGRO_POL_BC_TARGET: PAIR_ALLEGRO_POL_BC_TARGET,
         AOTI_ASE_POL_BC_TARGET: ASE_POL_BC_TARGET,
+        AOTI_BATCH_POL_BC_TARGET: BATCH_POL_BC_TARGET,
     }
 )

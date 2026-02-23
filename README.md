@@ -60,6 +60,31 @@ calculator = NequIPPolCalculator.from_compiled_model(
 )
 ```
 
+### Compile for TorchSim
+
+Use the `allegro-pol` batched target to generate a compiled model for
+`allegro_pol.integrations.torchsim.NequIPPolTorchSimCalc`:
+
+```bash
+nequip-compile \
+  path/to/model.ckpt \
+  path/to/compiled_model.nequip.pt2 \
+  --device cuda \
+  --mode aotinductor \
+  --target batch_pol_bc
+```
+
+Then load it with the `allegro-pol` TorchSim calculator:
+
+```python
+from allegro_pol.integrations.torchsim import NequIPPolTorchSimCalc
+
+calculator = NequIPPolTorchSimCalc.from_compiled_model(
+    compile_path="path/to/compiled_model.nequip.pt2",
+    device="cuda",  # or "cpu"
+)
+```
+
 ### Compile for LAMMPS pair styles
 
 Use an `allegro-pol` LAMMPS target with `nequip-compile` for pair-style integrations:

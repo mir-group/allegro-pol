@@ -1,7 +1,12 @@
 # This file is a part of the `allegro-pol` package. Please see LICENSE and README at the root for information on using it.
 import pytest
-from nequip.utils.unittests.model_tests_compilation import CompilationTestsMixin
+from nequip.data import AtomicDataDict
+from nequip.utils.unittests.model_tests_ase_integration import ASEIntegrationMixin
+from nequip.utils.unittests.model_tests_train_time_compile import TrainTimeCompileMixin
+from nequip.utils.unittests.model_tests_torchsim import TorchSimIntegrationMixin
 from nequip.utils.versions import _TORCH_GE_2_6
+
+from allegro_pol._keys import POLARIZABILITY_KEY
 
 _CUEQ_INSTALLED = False
 
@@ -51,7 +56,9 @@ minimal_config1 = dict(
 )
 
 
-class TestAllegroPol(CompilationTestsMixin):
+class TestAllegroPol(
+    TrainTimeCompileMixin, ASEIntegrationMixin, TorchSimIntegrationMixin
+):
     """Test suite for Allegro Polarization models"""
 
     @pytest.fixture
@@ -59,7 +66,7 @@ class TestAllegroPol(CompilationTestsMixin):
         return True
 
     @pytest.fixture(scope="class")
-    def nequip_compile_tol(self, model_dtype):
+    def ase_integration_tol(self, model_dtype):
         return {"float32": 5e-5, "float64": 1e-10}[model_dtype]
 
     @pytest.fixture(scope="class")
@@ -69,10 +76,48 @@ class TestAllegroPol(CompilationTestsMixin):
         return NequIPPolCalculator
 
     @pytest.fixture(scope="class")
-    def ase_aoti_compile_target(self):
+    def ase_aoti_target(self):
         from allegro_pol._compile import AOTI_ASE_POL_BC_TARGET
 
         return AOTI_ASE_POL_BC_TARGET
+
+    @pytest.fixture(scope="class")
+    def ase_properties_to_compare(self):
+        return [
+            "energy",
+            "forces",
+            AtomicDataDict.POLARIZATION_KEY,
+            AtomicDataDict.BORN_CHARGE_KEY,
+        ]
+
+    @pytest.fixture(scope="class")
+    def torchsim_calculator_cls(self):
+        from allegro_pol.integrations.torchsim import NequIPPolTorchSimCalc
+
+        return NequIPPolTorchSimCalc
+
+    @pytest.fixture(scope="class")
+    def torchsim_reference_ase_calculator_cls(self):
+        from allegro_pol.integrations.ase import NequIPPolCalculator
+
+        return NequIPPolCalculator
+
+    @pytest.fixture(scope="class")
+    def torchsim_aoti_target(self):
+        from allegro_pol._compile import AOTI_BATCH_POL_BC_TARGET
+
+        return AOTI_BATCH_POL_BC_TARGET
+
+    @pytest.fixture(scope="class")
+    def torchsim_properties_to_compare(self):
+        return [
+            "energy",
+            "forces",
+            "stress",
+            AtomicDataDict.POLARIZATION_KEY,
+            AtomicDataDict.BORN_CHARGE_KEY,
+            POLARIZABILITY_KEY,
+        ]
 
     @pytest.fixture(
         scope="class",
@@ -83,7 +128,7 @@ class TestAllegroPol(CompilationTestsMixin):
             else []
         ),
     )
-    def nequip_compile_acceleration_modifiers(self, request):
+    def ase_compile_modifiers(self, request):
         if request.param is None:
             return None
 
@@ -103,6 +148,10 @@ class TestAllegroPol(CompilationTestsMixin):
 
         return modifier_handler
 
+    @pytest.fixture(scope="class")
+    def torchsim_compile_modifiers(self, ase_compile_modifiers):
+        return ase_compile_modifiers
+
     @pytest.fixture(
         scope="class",
         params=[None]
@@ -112,11 +161,11 @@ class TestAllegroPol(CompilationTestsMixin):
             else []
         ),
     )
-    def train_time_compile_acceleration_modifiers(self, request):
+    def train_time_compile_modifiers(self, request):
         if request.param is None:
             return None
 
-        def modifier_handler(device):
+        def modifier_handler(device, model_dtype):
             if request.param == "enable_CuEquivarianceContracter":
                 if device == "cpu":
                     pytest.skip("CuEquivarianceContracter tests skipped for CPU")
