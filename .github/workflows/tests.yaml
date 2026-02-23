@@ -51,6 +51,15 @@ jobs:
         run: |
           python3 --version
           which python3
+      - name: Disable pip cache
+        run: |
+          echo "PIP_NO_CACHE_DIR=1" >> $GITHUB_ENV
+          echo "PIP_NO_CACHE=1" >> $GITHUB_ENV
+      - name: Configure torch cache directories
+        run: |
+          echo "TORCH_EXTENSIONS_DIR=/tmp/torch_extensions_${GITHUB_RUN_ID}_${GITHUB_RUN_ATTEMPT}" >> $GITHUB_ENV
+          echo "TORCHINDUCTOR_CACHE_DIR=/tmp/torchinductor_${GITHUB_RUN_ID}_${GITHUB_RUN_ATTEMPT}" >> $GITHUB_ENV
+          echo "TRITON_CACHE_DIR=/tmp/triton_${GITHUB_RUN_ID}_${GITHUB_RUN_ATTEMPT}" >> $GITHUB_ENV
       - name: Clone NequIP packages
         uses: mir-group/nequip-gh-actions/clone@main
         with:
