@@ -1,5 +1,4 @@
 # This file is a part of the `allegro-pol` package. Please see LICENSE and README at the root for information on using it.
-import math
 from e3nn import o3
 
 from nequip.data import AtomicDataDict
@@ -112,7 +111,7 @@ def _AllegroPolarizationEnergyModel(
     # scalar embed MLP
     scalar_embed_mlp_hidden_layers_depth: int = 1,
     scalar_embed_mlp_hidden_layers_width: int = 64,
-    scalar_embed_mlp_nonlinearity: str = "silu",
+    scalar_embed_mlp_nonlinearity: Optional[str] = "silu",
     # allegro layers
     num_layers: int = 2,
     num_scalar_features: int = 64,
@@ -126,7 +125,7 @@ def _AllegroPolarizationEnergyModel(
     readout_mlp_hidden_layers_width: int = 32,
     readout_mlp_nonlinearity: Optional[str] = "silu",
     # edge sum normalization
-    avg_num_neighbors: Optional[float] = None,
+    avg_num_neighbors: Union[float, Dict[str, float]] = None,
     # allegro layers defaults
     weight_individual_irreps: bool = True,
     # per atom energy params
@@ -199,6 +198,7 @@ def _AllegroPolarizationEnergyModel(
         num_tensor_features=num_tensor_features,
         tensor_track_allowed_irreps=tensor_track_allowed_irreps,
         avg_num_neighbors=avg_num_neighbors,
+        type_names=type_names,
         # MLP
         latent_kwargs={
             "hidden_layers_depth": allegro_mlp_hidden_layers_depth,
@@ -227,7 +227,6 @@ def _AllegroPolarizationEnergyModel(
     }
 
     # === allegro readout ===
-    assert avg_num_neighbors is not None, "`avg_num_neighbors` is required"
     edge_readout = ScalarMLP(
         output_dim=1,
         hidden_layers_depth=readout_mlp_hidden_layers_depth,
@@ -242,8 +241,8 @@ def _AllegroPolarizationEnergyModel(
     edge_eng_sum = EdgewiseReduce(
         field=AtomicDataDict.EDGE_ENERGY_KEY,
         out_field=AtomicDataDict.PER_ATOM_ENERGY_KEY,
-        factor=1.0 / math.sqrt(2 * avg_num_neighbors),
-        # ^ factor of 2 to normalize dE/dr_i which includes both contributions from dE/dr_ij and every other derivative against r_ji
+        avg_num_neighbors=avg_num_neighbors,
+        type_names=type_names,
         irreps_in=edge_readout.irreps_out,
     )
 
