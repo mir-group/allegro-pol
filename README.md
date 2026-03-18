@@ -1,3 +1,7 @@
+<p align="center">
+<img src="./allegro_pol_logo.png" width="65%" title="allegro-pol" alt="allegro-pol"/>
+</p>
+
 # allegro-pol
 
 `allegro-pol` is an extension package of the `nequip` framework that adapts the Allegro architecture (another `nequip` extension package) for the prediction of the electric response of materials (polarization, Born charges, polarizability) in addition to energy and forces within a single ML model.
